@@ -1,0 +1,11 @@
+{
+  "files": {
+    "main.css": "/ECOShakti/static/css/main.b83a0985.css",
+    "main.js": "/ECOShakti/static/js/main.f0b6aabe.js",
+    "index.html": "/ECOShakti/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.b83a0985.css",
+    "static/js/main.f0b6aabe.js"
+  ]
+}
