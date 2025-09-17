@@ -18,7 +18,7 @@ const LoginPage = ({ setAuth }) => {
         e.preventDefault();
         try {
             const body = { email, password };
-            const response = await fetch("https://ecoshakti-8rh9.onrender.com/api/login", {
+            const response = await fetch("https://ecoshakti-8rh9.onrender.com/auth/api/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
