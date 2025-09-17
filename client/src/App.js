@@ -5,7 +5,7 @@ import RegisterPage from './RegisterPage';
 
 // --- Recharts & Lucide Icons ---
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, BatteryCharging, ArrowLeftRight, History, PanelTop, PlusCircle, Menu, LogOut, Info, CalendarDays, AlertTriangle, Power } from 'lucide-react';
+import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, BatteryCharging, ArrowLeftRight, History, PlusCircle, Menu, LogOut, Info, CalendarDays, AlertTriangle, Power } from 'lucide-react';
 
 // --- Styles ---
 import './App.css';
