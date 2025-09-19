@@ -31,6 +31,12 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
+// --- ADD THIS NEW HEALTH CHECK / WAKE-UP ROUTE ---
+app.get('/api/health', (req, res) => {
+  res.status(200).send({ status: 'awake' });
+});
+
+
 // Routes
 app.use('/api/auth', authRoutes);
 

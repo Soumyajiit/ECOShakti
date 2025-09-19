@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
+import React, { useState, useEffect } from 'react'; // 1. Make sure useEffect is imported
+import { Link, useNavigate } from 'react-router-dom';
 import { Sun, Mail, Lock } from 'lucide-react';
 
 const LoginPage = ({ setAuth }) => {
@@ -8,7 +8,15 @@ const LoginPage = ({ setAuth }) => {
         password: ""
     });
     const [error, setError] = useState("");
-    const navigate = useNavigate(); // Hook for navigation
+    const navigate = useNavigate();
+
+
+    useEffect(() => {
+        // This "pings" the server to wake it up from sleep mode
+        fetch("https://ecoshakti-8nh9.onrender.com/api/health")
+            .then(res => console.log("Server pinged to wake up, status:", res.status))
+            .catch(err => console.error("Server ping failed:", err.message));
+    }, []); // The empty array [] ensures this runs only once when the page first loads
 
     const { email, password } = inputs;
 
@@ -28,15 +36,9 @@ const LoginPage = ({ setAuth }) => {
             const parseRes = await response.json();
 
             if (parseRes.token) {
-                // --- THE CHANGES ARE HERE ---
-                
-                // 1. Save the token and the user's name to localStorage
                 localStorage.setItem("token", parseRes.token);
                 localStorage.setItem("userName", parseRes.user.name);
-
-                // 2. Pass the user object to the setAuth function
                 setAuth(true, parseRes.user);
-
                 navigate("/"); // Redirect to dashboard
             } else {
                 setAuth(false, null);
