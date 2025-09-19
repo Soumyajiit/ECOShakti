@@ -1,5 +1,6 @@
 {
   "name": "client",
+  "homepage": "https://soumyajiit.github.io/ECOShakti",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -18,7 +19,9 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages --add -d build",
+    "build": "cross-env GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -39,5 +42,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "cross-env": "^10.0.0",
+    "gh-pages": "^6.3.0"
   }
 }

@@ -92,6 +92,7 @@ body {
   margin-top: 1.5rem;
 }
 
+/* Find this rule in App.css and add the new lines */
 .nav-item {
   display: flex;
   align-items: center;
@@ -100,6 +101,13 @@ body {
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
+  /* ADD THESE LINES */
+  background: none;
+  border: none;
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
 }
 
 .nav-item:hover {

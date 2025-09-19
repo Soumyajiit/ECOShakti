@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
 import { Sun, Mail, Lock } from 'lucide-react';
 
 const LoginPage = ({ setAuth }) => {
@@ -8,6 +8,7 @@ const LoginPage = ({ setAuth }) => {
         password: ""
     });
     const [error, setError] = useState("");
+    const navigate = useNavigate(); // Hook for navigation
 
     const { email, password } = inputs;
 
@@ -18,7 +19,7 @@ const LoginPage = ({ setAuth }) => {
         e.preventDefault();
         try {
             const body = { email, password };
-            const response = await fetch("https://ecoshakti-8rh9.onrender.com/api/auth/login", {
+            const response = await fetch("https://ecoshakti-8nh9.onrender.com/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
@@ -27,10 +28,18 @@ const LoginPage = ({ setAuth }) => {
             const parseRes = await response.json();
 
             if (parseRes.token) {
+                // --- THE CHANGES ARE HERE ---
+                
+                // 1. Save the token and the user's name to localStorage
                 localStorage.setItem("token", parseRes.token);
-                setAuth(true);
+                localStorage.setItem("userName", parseRes.user.name);
+
+                // 2. Pass the user object to the setAuth function
+                setAuth(true, parseRes.user);
+
+                navigate("/"); // Redirect to dashboard
             } else {
-                setAuth(false);
+                setAuth(false, null);
                 setError(parseRes.msg || "Login failed. Please check your credentials.");
             }
         } catch (err) {
@@ -75,7 +84,7 @@ const LoginPage = ({ setAuth }) => {
                             required
                         />
                     </div>
-                    <button className="auth-button">Log In</button>
+                    <button type="submit" className="auth-button">Log In</button>
                 </form>
                 <p className="auth-link">
                     Don't have an account? <Link to="/register">Sign Up</Link>
@@ -86,4 +95,3 @@ const LoginPage = ({ setAuth }) => {
 };
 
 export default LoginPage;
-

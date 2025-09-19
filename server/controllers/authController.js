@@ -36,7 +36,11 @@ exports.register = async (req, res) => {
             { expiresIn: '5h' }, // Token expires in 5 hours
             (err, token) => {
                 if (err) throw err;
-                res.json({ token });
+                // THE CHANGE IS HERE: Send user info with the token
+                res.json({
+                    token,
+                    user: { name: user.name, email: user.email }
+                });
             }
         );
     } catch (err) {
@@ -75,7 +79,11 @@ exports.login = async (req, res) => {
             { expiresIn: '5h' },
             (err, token) => {
                 if (err) throw err;
-                res.json({ token });
+                // THE CHANGE IS HERE: Send user info with the token
+                res.json({
+                    token,
+                    user: { name: user.name, email: user.email }
+                });
             }
         );
     } catch (err) {
@@ -83,4 +91,3 @@ exports.login = async (req, res) => {
         res.status(500).send('Server error');
     }
 };
-
