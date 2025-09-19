@@ -1,6 +1,6 @@
 {
   "name": "client",
-  "homepage": "https://soumyajiit.github.io/ECOShakti",
+ 
   "version": "0.1.0",
   "private": true,
   "dependencies": {
