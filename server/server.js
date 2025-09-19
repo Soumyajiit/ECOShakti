@@ -1,30 +1,33 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
+// const cors = require('cors'); // We are no longer using this package
 require('dotenv').config();
 const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// --- CORRECT CORS CONFIGURATION ---
 
-// PLEASE COPY THIS LINE CAREFULLY
-const allowedOrigin = "https://eco-shakti.netlify.app";
+// --- NEW MANUAL CORS MIDDLEWARE ---
+app.use((req, res, next) => {
+  const allowedOrigin = "https://eco-shakti.netlify.app";
+  console.log(`Incoming request origin: ${req.headers.origin}`); // Log the origin for every request
+  
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization'); // Added Authorization header
+  res.setHeader('Access-Control-Allow-Credentials', true);
 
-// Console log to verify the change on Render
-console.log("CORS configured for specific origin:", allowedOrigin);
+  // Intercept the preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    console.log('Responding to OPTIONS preflight request');
+    return res.sendStatus(204); // Respond with 204 No Content
+  }
 
-const corsOptions = {
-  origin: allowedOrigin,
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true,
-  optionsSuccessStatus: 204
-};
+  next();
+});
+// --- END OF MIDDLEWARE ---
 
-app.use(cors(corsOptions));
-
-// --- END OF CORS CONFIGURATION ---
 
 app.use(express.json());
 
