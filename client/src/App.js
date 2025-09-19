@@ -158,6 +158,8 @@ const Dashboard = ({ setAuth, user }) => {
 // --- Smaller Reusable Components ---
 
 // CHANGED: Updated the sidebar footer
+// In App.js
+
 const Sidebar = ({ isOpen, activeView, setActiveView }) => (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header"><h1 className="sidebar-title">ECOSHAKTI</h1></div>
@@ -171,12 +173,18 @@ const Sidebar = ({ isOpen, activeView, setActiveView }) => (
         <div className="contact-info">
             <h4 className="contact-headline">Contact</h4>
             <div className="contact-buttons-container">
-                {/* Remember to replace with your actual email */}
-                <a href="mailto:support@ecoshakti.com" className="contact-button">
+                {/* --- THIS IS THE UPDATED LINK --- */}
+                <a 
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=soumyajitb089@gmail.com" 
+                  className="contact-button"
+                  target="_blank" // Opens in a new tab
+                  rel="noopener noreferrer" // Security for new tabs
+                >
                     <Mail size={18} />
                 </a>
-                {/* Remember to replace with your actual phone number */}
-                <a href="tel:+1234567890" className="contact-button">
+                {/* --- END OF UPDATED LINK --- */}
+                
+                <a href="tel:+918100152317" className="contact-button">
                     <Phone size={18} />
                 </a>
             </div>
