@@ -7,35 +7,31 @@ const authRoutes = require('./routes/auth');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// --- THIS IS THE UPDATED CORS CONFIGURATION ---
+// --- CORRECT CORS CONFIGURATION ---
 
-// 1. Define the allowed origin
+// PLEASE COPY THIS LINE CAREFULLY
 const allowedOrigin = "https://eco-shakti.netlify.app";
 
-// 2. Add a console.log to verify the code is updated on Render
-console.log("CORS configured to allow origin:", allowedOrigin);
+// Console log to verify the change on Render
+console.log("CORS configured for specific origin:", allowedOrigin);
 
-// 3. Create a more robust CORS options object
 const corsOptions = {
   origin: allowedOrigin,
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allow all common methods
-  credentials: true, // Important for auth
-  optionsSuccessStatus: 204 // For legacy browser support
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  optionsSuccessStatus: 204
 };
 
-// 4. Use the CORS options
 app.use(cors(corsOptions));
 
 // --- END OF CORS CONFIGURATION ---
 
-
 app.use(express.json());
 
-// --- ADD THIS NEW HEALTH CHECK / WAKE-UP ROUTE ---
+// Health check / Wake-up route
 app.get('/api/health', (req, res) => {
   res.status(200).send({ status: 'awake' });
 });
-
 
 // Routes
 app.use('/api/auth', authRoutes);
