@@ -4,8 +4,9 @@ import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
 
 // --- Recharts & Lucide Icons ---
+// CHANGED: Added Mail and Phone icons
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, BatteryCharging, ArrowLeftRight, History, PlusCircle, Menu, LogOut, Info, CalendarDays, AlertTriangle, Power } from 'lucide-react';
+import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, BatteryCharging, ArrowLeftRight, History, PlusCircle, Menu, LogOut, Info, CalendarDays, AlertTriangle, Power, Mail, Phone } from 'lucide-react';
 
 // --- Styles ---
 import './App.css';
@@ -55,10 +56,9 @@ const mockNotifications = [
 // --- Main App Router Component ---
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null); // CHANGED: Added user state
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // CHANGED: Logic to keep user logged in on refresh
     const token = localStorage.getItem('token');
     const userName = localStorage.getItem('userName');
     if (token && userName) {
@@ -67,7 +67,6 @@ export default function App() {
     }
   }, []);
 
-  // CHANGED: setAuth now accepts user data
   const setAuth = (boolean, userData) => {
     setIsAuthenticated(boolean);
     setUser(userData);
@@ -82,7 +81,6 @@ export default function App() {
       <Routes>
         <Route path="/login" element={!isAuthenticated ? <LoginPage setAuth={setAuth} /> : <Navigate to="/" />} />
         <Route path="/register" element={!isAuthenticated ? <RegisterPage setAuth={setAuth} /> : <Navigate to="/" />} />
-        {/* CHANGED: Pass user state to Dashboard */}
         <Route path="/" element={isAuthenticated ? <Dashboard setAuth={setAuth} user={user} /> : <Navigate to="/login" />} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
@@ -92,7 +90,7 @@ export default function App() {
 
 
 // --- DASHBOARD COMPONENT ---
-const Dashboard = ({ setAuth, user }) => { // CHANGED: Accept user prop
+const Dashboard = ({ setAuth, user }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [powerData, setPowerData] = useState(initialPowerData);
   const [eventLog, setEventLog] = useState(initialEventLog);
@@ -111,7 +109,7 @@ const Dashboard = ({ setAuth, user }) => { // CHANGED: Accept user prop
   };
 
   const handleLogout = () => {
-    setAuth(false, null); // CHANGED: Clear user state on logout
+    setAuth(false, null);
     navigate('/login');
   };
   
@@ -135,7 +133,7 @@ const Dashboard = ({ setAuth, user }) => { // CHANGED: Accept user prop
           onLogout={handleLogout}
           onNotificationClick={() => setNotificationOpen(!isNotificationOpen)}
           unreadCount={unreadCount}
-          user={user} // CHANGED: Pass user prop to Header
+          user={user}
         />
         {isNotificationOpen && (
             <NotificationPanel 
@@ -159,6 +157,7 @@ const Dashboard = ({ setAuth, user }) => { // CHANGED: Accept user prop
 
 // --- Smaller Reusable Components ---
 
+// CHANGED: Updated the sidebar footer
 const Sidebar = ({ isOpen, activeView, setActiveView }) => (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header"><h1 className="sidebar-title">ECOSHAKTI</h1></div>
@@ -168,11 +167,25 @@ const Sidebar = ({ isOpen, activeView, setActiveView }) => (
         <button className={`nav-item ${activeView === 'settings' ? 'active' : ''}`} onClick={() => setActiveView('settings')}><Settings className="nav-item-icon" /><span>Settings</span></button>
         <button className={`nav-item ${activeView === 'about' ? 'active' : ''}`} onClick={() => setActiveView('about')}><Info className="nav-item-icon" /><span>About</span></button>
       </nav>
-      <div className="sidebar-footer"><div className="support-box"><p>Need help?</p><button>Contact Support</button></div></div>
+      <div className="sidebar-footer">
+        <div className="contact-info">
+            <h4 className="contact-headline">Contact</h4>
+            <div className="contact-buttons-container">
+                {/* Remember to replace with your actual email */}
+                <a href="mailto:support@ecoshakti.com" className="contact-button">
+                    <Mail size={18} />
+                </a>
+                {/* Remember to replace with your actual phone number */}
+                <a href="tel:+1234567890" className="contact-button">
+                    <Phone size={18} />
+                </a>
+            </div>
+        </div>
+      </div>
     </aside>
 );
 
-const Header = ({ onMenuClick, onLogout, onNotificationClick, unreadCount, user }) => ( // CHANGED: Accept user prop
+const Header = ({ onMenuClick, onLogout, onNotificationClick, unreadCount, user }) => (
   <header className="header">
     <div className="header-content">
        <button className="menu-button" onClick={onMenuClick}><Menu /></button>
@@ -185,9 +198,7 @@ const Header = ({ onMenuClick, onLogout, onNotificationClick, unreadCount, user 
           )}
         </button>
         <div className="user-menu">
-            {/* CHANGED: Dynamic avatar initial */}
             <img src={`https://placehold.co/40x40/F97316/FFFFFF/png?text=${user?.name ? user.name[0].toUpperCase() : 'U'}`} alt="User" className="user-avatar" />
-            {/* CHANGED: Dynamic user name */}
             <span className="user-name">{user?.name ? user.name : 'User'}</span>
             <ChevronDown size={16} />
         </div>
@@ -197,7 +208,6 @@ const Header = ({ onMenuClick, onLogout, onNotificationClick, unreadCount, user 
   </header>
 );
 
-// ... The rest of your components (DashboardContent, StatCard, etc.) remain exactly the same.
 const DashboardContent = ({ activeView, powerData, eventLog, onAddData }) => {
   const latestData = powerData.length > 0 ? powerData[powerData.length - 1] : {};
   const batteryStatus = latestData.battery || 0;
