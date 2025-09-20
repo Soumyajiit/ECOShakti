@@ -4,7 +4,6 @@ import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
 
 // --- Recharts & Lucide Icons ---
-// --- MODIFIED --- Added BarChart icon
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceDot, BarChart, Bar } from 'recharts';
 import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, BatteryCharging, ArrowLeftRight, History, PlusCircle, Menu, LogOut, Info, CalendarDays, AlertTriangle, Power, Mail, Phone, BarChart as BarChartIcon } from 'lucide-react';
 
@@ -53,15 +52,15 @@ const mockNotifications = [
     { id: 3, title: 'System Nominal', message: 'All systems are running optimally.', timestamp: '8h ago', read: true, icon: <Power size={20} className="green-icon" /> },
 ];
 
-// --- NEW --- Data for the Economy/Savings report
+// --- MODIFIED --- Added 'totalConsumption' to monthly data
 const UTILITY_RATE_PER_KWH = 7.5; // Price in ₹ per kWh from the grid
 const monthlyData = [
-  { month: 'April', totalGeneration: 310 },
-  { month: 'May', totalGeneration: 380 },
-  { month: 'June', totalGeneration: 355 },
-  { month: 'July', totalGeneration: 360 },
-  { month: 'August', totalGeneration: 410 },
-  { month: 'September', totalGeneration: 390 },
+  { month: 'April', totalGeneration: 310, totalConsumption: 400 },
+  { month: 'May', totalGeneration: 380, totalConsumption: 420 },
+  { month: 'June', totalGeneration: 355, totalConsumption: 380 },
+  { month: 'July', totalGeneration: 360, totalConsumption: 410 },
+  { month: 'August', totalGeneration: 410, totalConsumption: 450 },
+  { month: 'September', totalGeneration: 390, totalConsumption: 430 },
 ];
 
 // --- Main App Router Component ---
@@ -205,7 +204,6 @@ const Dashboard = ({ setAuth, user }) => {
 
 // --- Smaller Reusable Components ---
 
-// --- MODIFIED --- Added Economy tab to Sidebar
 const Sidebar = ({ isOpen, activeView, setActiveView }) => (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header"><h1 className="sidebar-title">ECOSHAKTI</h1></div>
@@ -259,7 +257,6 @@ const Header = ({ onMenuClick, onLogout, onNotificationClick, unreadCount, user 
   </header>
 );
 
-// --- MODIFIED --- Added rendering for the new Economy view
 const DashboardContent = ({ activeView, processedPowerData, eventLog, onAddData }) => {
   const latestData = processedPowerData.length > 0 ? processedPowerData[processedPowerData.length - 1] : {};
   return (
@@ -360,20 +357,28 @@ const HistoryView = () => {
     return (<><h2 className="page-title">Weekly History</h2><div className="history-container"><div className="day-selector">{historyData.map(day => (<button key={day.date} className={`day-selector-item ${selectedDay.date === day.date ? 'active' : ''}`} onClick={() => setSelectedDay(day)}><span>{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}</span><strong>{new Date(day.date).toLocaleDateString('en-US', { day: '2-digit' })}</strong></button>))}</div><div className="day-details"><div className="day-details-header"><CalendarDays size={24} /><h3>{new Date(selectedDay.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h3></div><div className="day-details-body"><div className="day-stats"><div className="stat-item"><Sun size={20} className="orange-icon" /><div><span>Total Generation</span><strong>{selectedDay.totalGeneration} kWh</strong></div></div><div className="stat-item"><Zap size={20} className="blue-icon" /><div><span>Total Consumption</span><strong>{selectedDay.totalConsumption} kWh</strong></div></div><div className="stat-item"><ArrowLeftRight size={20} className={netEnergy >= 0 ? 'green-icon' : 'red-icon'} /><div><span>Net Energy</span><strong className={netEnergy >= 0 ? 'positive' : 'negative'}>{netEnergy.toFixed(1)} kWh</strong></div></div></div><div className="day-chart"><RingChart size={140} strokeWidth={12} percentage={selfSufficiency} color="var(--tangerine-primary)" /><h4>Self-Sufficiency</h4><p>You generated {Math.round(selfSufficiency)}% of the energy you consumed.</p></div></div><div className="day-details-footer"><p><strong>Notes:</strong> {selectedDay.notes}</p></div></div></div></>);
 };
 
-// --- NEW --- Component for the Economy Report View
+// --- MODIFIED --- Component now shows consumption vs savings and includes a data table
 const EconomyView = () => {
-  // Calculate savings for each month
+  // Savings are calculated from generation, as this is the energy you didn't have to buy
   const dataWithSavings = monthlyData.map(item => ({
     ...item,
     savings: parseFloat((item.totalGeneration * UTILITY_RATE_PER_KWH).toFixed(2)),
   }));
 
   const totalSavings = dataWithSavings.reduce((acc, curr) => acc + curr.savings, 0);
+  const totalConsumption = dataWithSavings.reduce((acc, curr) => acc + curr.totalConsumption, 0);
 
   return (
     <>
       <h2 className="page-title">Economy Report</h2>
       <div className="stat-cards-grid">
+         <StatCard 
+            icon={<Zap size={24} />} 
+            title="Total Consumption" 
+            value={`${totalConsumption} kWh`} 
+            trend="Last 6 months" 
+            color="blue" 
+          />
          <StatCard 
             icon={<Zap size={24} />} 
             title="Estimated Total Savings" 
@@ -383,19 +388,42 @@ const EconomyView = () => {
           />
       </div>
       <div className="chart-container">
-        <h3 className="chart-title">Monthly Generation & Savings</h3>
+        <h3 className="chart-title">Monthly Consumption & Savings</h3>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={dataWithSavings} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
-            <YAxis yAxisId="left" orientation="left" stroke="#8884d8" label={{ value: 'kWh', angle: -90, position: 'insideLeft' }} />
+            <YAxis yAxisId="left" orientation="left" stroke="#3B82F6" label={{ value: 'kWh', angle: -90, position: 'insideLeft' }} />
             <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" label={{ value: '₹', angle: -90, position: 'insideRight' }} />
             <Tooltip formatter={(value, name) => name === 'Savings (₹)' ? `₹${value}` : `${value} kWh`} />
             <Legend />
-            <Bar yAxisId="left" dataKey="totalGeneration" fill="#8884d8" name="Total Generation (kWh)" />
+            <Bar yAxisId="left" dataKey="totalConsumption" fill="#3B82F6" name="Total Consumption (kWh)" />
             <Bar yAxisId="right" dataKey="savings" fill="#82ca9d" name="Savings (₹)" />
           </BarChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* --- NEW --- Data table for monthly breakdown */}
+      <div className="data-table-container">
+        <h3 className="table-title">Monthly Breakdown</h3>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Consumption (kWh)</th>
+              <th>Savings (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dataWithSavings.map(item => (
+              <tr key={item.month}>
+                <td>{item.month}</td>
+                <td>{item.totalConsumption}</td>
+                <td>₹{item.savings.toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </>
   );
