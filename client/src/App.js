@@ -11,57 +11,56 @@ import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, Battery
 import './App.css';
 
 
-// --- Mock Data ---
+// --- MOCK DATA (REVISED FOR REALISM) ---
+// Simulates a ~4kW solar system and a typical household in West Bengal, India.
 const initialPowerData = [
-  { time: '00:00', generation: 0, consumption: 300, battery: 85, sunlight: 0 },
-  { time: '02:00', generation: 0, consumption: 250, battery: 80, sunlight: 0 },
-  { time: '04:00', generation: 0, consumption: 200, battery: 75, sunlight: 0 },
-  { time: '06:00', generation: 100, consumption: 400, battery: 70, sunlight: 10 },
-  { time: '08:00', generation: 800, consumption: 500, battery: 78, sunlight: 45 },
-  { time: '10:00', generation: 1500, consumption: 600, battery: 90, sunlight: 80 },
-  { time: '12:00', generation: 2200, consumption: 750, battery: 100, sunlight: 95 },
-  // Malfunction Point: High sunlight but low generation
-  { time: '14:00', generation: 800, consumption: 800, battery: 100, sunlight: 93 }, 
-  { time: '16:00', generation: 1600, consumption: 900, battery: 95, sunlight: 70 },
-  // Consumption Spike: Consumption is unusually high for this time
-  { time: '18:00', generation: 500, consumption: 1800, battery: 85, sunlight: 25 }, 
-  { time: '20:00', generation: 0, consumption: 1000, battery: 70, sunlight: 0 },
-  { time: '22:00', generation: 0, consumption: 600, battery: 60, sunlight: 0 },
+  { time: '00:00', generation: 0, consumption: 300, battery: 90, sunlight: 0 },
+  { time: '02:00', generation: 0, consumption: 250, battery: 82, sunlight: 0 },
+  { time: '04:00', generation: 0, consumption: 250, battery: 75, sunlight: 0 },
+  { time: '06:00', generation: 150, consumption: 800, battery: 68, sunlight: 10 },
+  { time: '08:00', generation: 1200, consumption: 700, battery: 75, sunlight: 45 },
+  { time: '10:00', generation: 2800, consumption: 600, battery: 95, sunlight: 80 },
+  { time: '12:00', generation: 3400, consumption: 650, battery: 100, sunlight: 98 },
+  // Malfunction Point: Generation inexplicably drops despite strong sunlight.
+  { time: '14:00', generation: 1100, consumption: 700, battery: 100, sunlight: 95 },
+  { time: '16:00', generation: 2200, consumption: 900, battery: 100, sunlight: 70 },
+  { time: '18:00', generation: 400, consumption: 1500, battery: 85, sunlight: 20 },
+  // Consumption Spike: Evening peak + an extra, unexpected load.
+  { time: '20:00', generation: 0, consumption: 2500, battery: 60, sunlight: 0 },
+  { time: '22:00', generation: 0, consumption: 1200, battery: 45, sunlight: 0 },
 ];
 
 const initialEventLog = [
-  { id: 1, time: '15:02', event: 'Battery Full', status: 'Charged', icon: <BatteryCharging size={16} />, color: 'green' },
-  { id: 2, time: '14:30', event: 'Peak Generation', status: 'Optimal', icon: <Sun size={16} />, color: 'orange' },
-  { id: 3, time: '12:15', event: 'Grid Exporting', status: 'Active', icon: <ArrowLeftRight size={16} />, color: 'blue' },
-  { id: 4, time: '08:45', event: 'High Consumption', status: 'Warning', icon: <Zap size={16} />, color: 'red' },
+  { id: 1, time: '12:30', event: 'Battery Fully Charged', status: 'Optimal', icon: <BatteryCharging size={16} />, color: 'green' },
+  { id: 2, time: '12:00', event: 'Peak Generation', status: 'Optimal', icon: <Sun size={16} />, color: 'orange' },
+  { id: 3, time: '11:00', event: 'Grid Exporting', status: 'Active', icon: <ArrowLeftRight size={16} />, color: 'blue' },
+  { id: 4, time: '20:15', event: 'High Consumption', status: 'Warning', icon: <Zap size={16} />, color: 'red' },
   { id: 5, time: '06:00', event: 'Generation Started', status: 'Nominal', icon: <Sun size={16} />, color: 'orange' },
 ];
 
+// Updated to be consistent with the new daily data
 const historyData = [
-    { date: '2025-09-17', totalGeneration: 25.2, totalConsumption: 18.5, peakGeneration: 2.3, notes: "Clear skies, high production." },
-    { date: '2025-09-16', totalGeneration: 22.8, totalConsumption: 20.1, peakGeneration: 2.1, notes: "Partly cloudy in the afternoon." },
-    { date: '2025-09-15', totalGeneration: 26.1, totalConsumption: 19.2, peakGeneration: 2.4, notes: "Sunny day, optimal performance." },
-    { date: '2025-09-14', totalGeneration: 15.5, totalConsumption: 22.0, peakGeneration: 1.2, notes: "Overcast with heavy rain." },
-    { date: '2025-09-13', totalGeneration: 24.9, totalConsumption: 17.8, peakGeneration: 2.2, notes: "Excellent generation." },
-    { date: '2025-09-12', totalGeneration: 23.5, totalConsumption: 21.5, peakGeneration: 2.0, notes: "Higher than average consumption." },
-    { date: '2025-09-11', totalGeneration: 19.8, totalConsumption: 18.9, peakGeneration: 1.8, notes: "Morning fog, cleared by noon." },
+    { date: '2025-09-17', totalGeneration: 18.7, totalConsumption: 20.1, peakGeneration: 3.4, notes: "Clear skies, high production. Unexpected consumption spike in the evening." },
+    { date: '2025-09-16', totalGeneration: 15.2, totalConsumption: 17.1, peakGeneration: 2.9, notes: "Partly cloudy in the afternoon." },
+    { date: '2025-09-15', totalGeneration: 19.1, totalConsumption: 16.2, peakGeneration: 3.5, notes: "Sunny day, optimal performance." },
+    { date: '2025-09-14', totalGeneration: 8.5, totalConsumption: 18.0, peakGeneration: 1.2, notes: "Overcast with some rain." },
 ];
 
 const mockNotifications = [
-    { id: 1, title: 'High Consumption Alert', message: 'Power consumption has exceeded 1100W.', timestamp: '5m ago', read: false, icon: <AlertTriangle size={20} className="red-icon" /> },
-    { id: 2, title: 'Generation Dip', message: 'Solar generation dropped unexpectedly.', timestamp: '2h ago', read: false, icon: <Sun size={20} className="orange-icon" /> },
     { id: 3, title: 'System Nominal', message: 'All systems are running optimally.', timestamp: '8h ago', read: true, icon: <Power size={20} className="green-icon" /> },
 ];
 
 const UTILITY_RATE_PER_KWH = 7.5; 
+// Revised monthly data based on daily average of ~18.7kWh gen / ~20.1kWh consumption
 const monthlyData = [
-  { month: 'April', totalGeneration: 310, totalConsumption: 400 },
-  { month: 'May', totalGeneration: 380, totalConsumption: 420 },
-  { month: 'June', totalGeneration: 355, totalConsumption: 380 },
-  { month: 'July', totalGeneration: 360, totalConsumption: 410 },
-  { month: 'August', totalGeneration: 410, totalConsumption: 450 },
-  { month: 'September', totalGeneration: 390, totalConsumption: 430 },
+  { month: 'April', totalGeneration: 561, totalConsumption: 603 },
+  { month: 'May', totalGeneration: 580, totalConsumption: 620 },
+  { month: 'June', totalGeneration: 490, totalConsumption: 640 },
+  { month: 'July', totalGeneration: 460, totalConsumption: 650 },
+  { month: 'August', totalGeneration: 470, totalConsumption: 645 },
+  { month: 'September', totalGeneration: 520, totalConsumption: 610 },
 ];
+
 
 // --- Main App Router Component ---
 export default function App() {
@@ -109,19 +108,19 @@ const Dashboard = ({ setAuth, user }) => {
   const [isNotificationOpen, setNotificationOpen] = useState(false);
   const [processedPowerData, setProcessedPowerData] = useState([]);
   
-  // State for Appliances feature
   const [appliances, setAppliances] = useState([
     { id: 1, name: 'Refrigerator', power: 200, isOn: true },
-    { id: 2, name: 'Living Room Lights', power: 100, isOn: true },
-    { id: 3, name: 'Air Conditioner', power: 1500, isOn: false },
+    { id: 2, name: 'Fans (x3)', power: 225, isOn: true },
+    { id: 3, name: 'Air Conditioner (1.5 Ton)', power: 1500, isOn: false },
+    { id: 4, name: 'Television', power: 120, isOn: false },
+    { id: 5, name: 'Lights', power: 100, isOn: true },
   ]);
   const [spikeLog, setSpikeLog] = useState([]);
   
   const navigate = useNavigate();
 
-  // Effect for solar panel malfunction detection
   useEffect(() => {
-    const MAX_GENERATION = 2300;
+    const MAX_GENERATION = 3600; // Updated realistic peak
     const TOLERANCE = 0.6;
 
     const dataWithAnomalies = powerData.map(dataPoint => {
@@ -155,7 +154,6 @@ const Dashboard = ({ setAuth, user }) => {
     setProcessedPowerData(dataWithAnomalies);
   }, [powerData]);
 
-  // useEffect for consumption spike monitoring
   useEffect(() => {
     const interval = setInterval(() => {
       const latestDataPoint = powerData[powerData.length - 1];
@@ -165,7 +163,7 @@ const Dashboard = ({ setAuth, user }) => {
         .filter(app => app.isOn)
         .reduce((sum, app) => sum + app.power, 0);
 
-      const SPIKE_THRESHOLD = 1.25; // 25% spike
+      const SPIKE_THRESHOLD = 1.25;
 
       if (expectedConsumption > 0 && latestDataPoint.consumption > expectedConsumption * SPIKE_THRESHOLD) {
         const spikeMessage = `Unexpected consumption spike detected!`;
@@ -177,7 +175,6 @@ const Dashboard = ({ setAuth, user }) => {
                 actual: latestDataPoint.consumption,
                 expected: expectedConsumption,
             };
-            // Prevent logging the exact same spike repeatedly
             if (prevLog.length > 0 && prevLog[0].actual === newSpike.actual && prevLog[0].expected === newSpike.expected) {
                 return prevLog;
             }
@@ -199,9 +196,9 @@ const Dashboard = ({ setAuth, user }) => {
           return prev;
         });
       }
-    }, 5000); // Check every 5 seconds
+    }, 5000); 
 
-    return () => clearInterval(interval); // Cleanup on component unmount
+    return () => clearInterval(interval);
   }, [appliances, powerData]);
 
   const handleAddData = (newDataPoint) => {
@@ -269,6 +266,7 @@ const Dashboard = ({ setAuth, user }) => {
         <main className="main-content">
           <DashboardContent
             activeView={activeView}
+            powerData={powerData}
             processedPowerData={processedPowerData}
             eventLog={eventLog}
             appliances={appliances}
@@ -340,17 +338,33 @@ const Header = ({ onMenuClick, onLogout, onNotificationClick, unreadCount, user 
   </header>
 );
 
-const DashboardContent = ({ activeView, processedPowerData, eventLog, onAddData, appliances, spikeLog, onAddAppliance, onToggleAppliance, onRemoveAppliance }) => {
+const DashboardContent = ({ activeView, powerData, processedPowerData, eventLog, onAddData, appliances, spikeLog, onAddAppliance, onToggleAppliance, onRemoveAppliance }) => {
   const latestData = processedPowerData.length > 0 ? processedPowerData[processedPowerData.length - 1] : {};
+
+  // Calculate total daily energy by approximating the area under the curve
+  const totalGenerationWh = powerData.reduce((acc, data, index) => {
+    if (index === 0) return 0;
+    const prevData = powerData[index - 1];
+    const avgPower = (data.generation + prevData.generation) / 2;
+    return acc + (avgPower * 2); // Multiply by 2-hour interval
+  }, 0);
+
+  const totalConsumptionWh = powerData.reduce((acc, data, index) => {
+    if (index === 0) return 0;
+    const prevData = powerData[index - 1];
+    const avgPower = (data.consumption + prevData.consumption) / 2;
+    return acc + (avgPower * 2); // Multiply by 2-hour interval
+  }, 0);
+  
   return (
     <>
       {activeView === 'dashboard' && (
         <>
           <h2 className="page-title">Dashboard</h2>
           <div className="stat-cards-grid">
-            <StatCard icon={<Zap size={24} />} title="Generation Today" value={`1850 Wh`} trend="+5%" color="orange" />
-            <StatCard icon={<Zap size={24} />} title="Consumption Today" value={`${latestData.consumption || 0} Wh`} trend="-2%" color="blue" />
-            <StatCard icon={<BatteryCharging size={24} />} title="Battery Status" value={`${latestData.battery || 0}%`} trend={`${(latestData.battery || 0) > 99 ? 'Full' : 'Charging'}`} color="green" />
+            <StatCard icon={<Sun size={24} />} title="Generation Today" value={`${(totalGenerationWh / 1000).toFixed(1)} kWh`} trend="+5%" color="orange" />
+            <StatCard icon={<Zap size={24} />} title="Consumption Today" value={`${(totalConsumptionWh / 1000).toFixed(1)} kWh`} trend="-2%" color="blue" />
+            <StatCard icon={<BatteryCharging size={24} />} title="Battery Status" value={`${latestData.battery || 0}%`} trend={`${(latestData.battery || 0) >= 100 ? 'Full' : 'Charging'}`} color="green" />
             <StatCard icon={<ArrowLeftRight size={24} />} title="Grid Status" value={(latestData.generation > latestData.consumption) ? "Exporting" : "Importing"} trend="" color={(latestData.generation > latestData.consumption) ? "green" : "red"} />
           </div>
           
@@ -579,9 +593,9 @@ const ApplianceView = ({ appliances, spikeLog, onAddAppliance, onToggleAppliance
                     </div>
                     {spikeLog.length > 0 ? spikeLog.map(log => (
                         <div className="table-row" key={log.id}>
-                            <div className="table-cell">{log.timestamp.toLocaleString()}</div>
-                            <div className="table-cell">{log.expected} W</div>
-                            <div className="table-cell">{log.actual} W</div>
+                            <div className="table-cell" data-label="Timestamp">{log.timestamp.toLocaleString()}</div>
+                            <div className="table-cell" data-label="Expected">{log.expected} W</div>
+                            <div className="table-cell" data-label="Actual">{log.actual} W</div>
                         </div>
                     )) : <div className="table-row"><div className="table-cell" style={{ textAlign: 'center', width: '100%' }}>No spikes detected yet.</div></div>}
                 </div>
