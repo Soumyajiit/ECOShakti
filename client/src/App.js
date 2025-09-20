@@ -4,7 +4,8 @@ import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
 
 // --- Recharts & Lucide Icons ---
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+// --- MODIFIED --- Added ReferenceDot for chart alerts
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceDot } from 'recharts';
 import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, BatteryCharging, ArrowLeftRight, History, PlusCircle, Menu, LogOut, Info, CalendarDays, AlertTriangle, Power, Mail, Phone } from 'lucide-react';
 
 // --- Styles ---
@@ -12,19 +13,21 @@ import './App.css';
 
 
 // --- Mock Data ---
+// --- MODIFIED --- Added 'sunlight' property and a malfunction data point at 14:00
 const initialPowerData = [
-  { time: '00:00', generation: 0, consumption: 300, battery: 85 },
-  { time: '02:00', generation: 0, consumption: 250, battery: 80 },
-  { time: '04:00', generation: 0, consumption: 200, battery: 75 },
-  { time: '06:00', generation: 100, consumption: 400, battery: 70 },
-  { time: '08:00', generation: 800, consumption: 500, battery: 78 },
-  { time: '10:00', generation: 1500, consumption: 600, battery: 90 },
-  { time: '12:00', generation: 2200, consumption: 750, battery: 100 },
-  { time: '14:00', generation: 2100, consumption: 800, battery: 100 },
-  { time: '16:00', generation: 1600, consumption: 900, battery: 95 },
-  { time: '18:00', generation: 500, consumption: 1200, battery: 85 },
-  { time: '20:00', generation: 0, consumption: 1000, battery: 70 },
-  { time: '22:00', generation: 0, consumption: 600, battery: 60 },
+  { time: '00:00', generation: 0, consumption: 300, battery: 85, sunlight: 0 },
+  { time: '02:00', generation: 0, consumption: 250, battery: 80, sunlight: 0 },
+  { time: '04:00', generation: 0, consumption: 200, battery: 75, sunlight: 0 },
+  { time: '06:00', generation: 100, consumption: 400, battery: 70, sunlight: 10 },
+  { time: '08:00', generation: 800, consumption: 500, battery: 78, sunlight: 45 },
+  { time: '10:00', generation: 1500, consumption: 600, battery: 90, sunlight: 80 },
+  { time: '12:00', generation: 2200, consumption: 750, battery: 100, sunlight: 95 },
+  // Malfunction Point: High sunlight but low generation
+  { time: '14:00', generation: 800, consumption: 800, battery: 100, sunlight: 93 }, 
+  { time: '16:00', generation: 1600, consumption: 900, battery: 95, sunlight: 70 },
+  { time: '18:00', generation: 500, consumption: 1200, battery: 85, sunlight: 25 },
+  { time: '20:00', generation: 0, consumption: 1000, battery: 70, sunlight: 0 },
+  { time: '22:00', generation: 0, consumption: 600, battery: 60, sunlight: 0 },
 ];
 
 const initialEventLog = [
@@ -89,6 +92,7 @@ export default function App() {
 
 
 // --- DASHBOARD COMPONENT ---
+// --- MODIFIED --- Added malfunction detection logic
 const Dashboard = ({ setAuth, user }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [powerData, setPowerData] = useState(initialPowerData);
@@ -96,11 +100,53 @@ const Dashboard = ({ setAuth, user }) => {
   const [activeView, setActiveView] = useState('dashboard');
   const [notifications, setNotifications] = useState(mockNotifications);
   const [isNotificationOpen, setNotificationOpen] = useState(false);
-
+  
+  // --- NEW --- State for data with anomaly flags
+  const [processedPowerData, setProcessedPowerData] = useState([]);
   const navigate = useNavigate();
 
+  // --- NEW --- useEffect for malfunction detection
+  useEffect(() => {
+    const MAX_GENERATION = 2300; // Your system's approximate max output in Watts
+    const TOLERANCE = 0.6; // Flag if generation is below 60% of expected output
+
+    const dataWithAnomalies = powerData.map(dataPoint => {
+      // Skip check for night time
+      if (!dataPoint.sunlight || dataPoint.sunlight <= 0) {
+        return { ...dataPoint, isMalfunction: false };
+      }
+
+      const expectedGeneration = (dataPoint.sunlight / 100) * MAX_GENERATION;
+      const isMalfunctioning = dataPoint.generation < (expectedGeneration * TOLERANCE);
+
+      if (isMalfunctioning) {
+        // Use a consistent message to prevent duplicate notifications
+        const malfunctionMessage = 'Possible malfunction in grid. Generation is lower than expected.';
+        setNotifications(prev => {
+          // Add notification only if a similar one doesn't already exist
+          if (!prev.some(n => n.message === malfunctionMessage)) {
+            const newNotification = {
+              id: Date.now(),
+              title: 'System Alert',
+              message: malfunctionMessage,
+              timestamp: 'Just now',
+              read: false,
+              icon: <AlertTriangle size={20} className="red-icon" />
+            };
+            return [newNotification, ...prev];
+          }
+          return prev;
+        });
+      }
+      return { ...dataPoint, isMalfunction: isMalfunctioning };
+    });
+
+    setProcessedPowerData(dataWithAnomalies);
+  }, [powerData]);
+
+
   const handleAddData = (newDataPoint) => {
-    const formattedData = { ...newDataPoint, generation: Number(newDataPoint.generation) || 0, consumption: Number(newDataPoint.consumption) || 0, battery: Number(newDataPoint.battery) || 0 };
+    const formattedData = { ...newDataPoint, generation: Number(newDataPoint.generation) || 0, consumption: Number(newDataPoint.consumption) || 0, battery: Number(newDataPoint.battery) || 0, sunlight: Number(newDataPoint.sunlight) || 0 };
     const updatedData = [...powerData, formattedData].sort((a, b) => a.time.localeCompare(b.time));
     setPowerData(updatedData);
     const newEvent = { id: eventLog.length + 1, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), event: 'Manual Entry', status: 'Logged', icon: <PlusCircle size={16} />, color: 'gray' };
@@ -144,7 +190,8 @@ const Dashboard = ({ setAuth, user }) => {
         <main className="main-content">
           <DashboardContent
             activeView={activeView}
-            powerData={powerData}
+            // --- MODIFIED --- Pass processedData to the content component
+            processedPowerData={processedPowerData}
             eventLog={eventLog}
             onAddData={handleAddData}
           />
@@ -209,8 +256,9 @@ const Header = ({ onMenuClick, onLogout, onNotificationClick, unreadCount, user 
   </header>
 );
 
-const DashboardContent = ({ activeView, powerData, eventLog, onAddData }) => {
-  const latestData = powerData.length > 0 ? powerData[powerData.length - 1] : {};
+// --- MODIFIED --- Updated to accept processedPowerData and render the new chart
+const DashboardContent = ({ activeView, processedPowerData, eventLog, onAddData }) => {
+  const latestData = processedPowerData.length > 0 ? processedPowerData[processedPowerData.length - 1] : {};
   return (
     <>
       {activeView === 'dashboard' && (
@@ -225,7 +273,21 @@ const DashboardContent = ({ activeView, powerData, eventLog, onAddData }) => {
           <div className="chart-container">
             <h3 className="chart-title">Today's Power Metrics</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={powerData}><defs><linearGradient id="colorGeneration" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#F97316" stopOpacity={0.8}/><stop offset="95%" stopColor="#F97316" stopOpacity={0}/></linearGradient><linearGradient id="colorConsumption" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" /><XAxis dataKey="time" /><YAxis /><Tooltip /><Legend /><Area type="monotone" dataKey="generation" stroke="#F97316" fillOpacity={1} fill="url(#colorGeneration)" name="Generation (W)" /><Area type="monotone" dataKey="consumption" stroke="#3B82F6" fillOpacity={1} fill="url(#colorConsumption)" name="Consumption (W)" /></AreaChart>
+              <AreaChart data={processedPowerData}><defs><linearGradient id="colorGeneration" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#F97316" stopOpacity={0.8}/><stop offset="95%" stopColor="#F97316" stopOpacity={0}/></linearGradient><linearGradient id="colorConsumption" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="time" />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                <Tooltip />
+                <Legend />
+                <Area yAxisId="left" type="monotone" dataKey="generation" stroke="#F97316" fillOpacity={1} fill="url(#colorGeneration)" name="Generation (W)" />
+                <Area yAxisId="left" type="monotone" dataKey="consumption" stroke="#3B82F6" fillOpacity={1} fill="url(#colorConsumption)" name="Consumption (W)" />
+                <Area yAxisId="right" type="monotone" dataKey="sunlight" stroke="#82ca9d" fill="none" name="Sunlight (%)" strokeWidth={2} />
+                
+                {/* --- NEW --- Renders a red dot on any data point flagged as a malfunction */}
+                {processedPowerData.map((entry, index) =>
+                  entry.isMalfunction ? <ReferenceDot key={index} r={5} fill="red" stroke="white" yAxisId="left" x={entry.time} y={entry.generation} /> : null
+                )}
+              </AreaChart>
             </ResponsiveContainer>
           </div>
           <div className="bottom-grid">
@@ -243,19 +305,23 @@ const DashboardContent = ({ activeView, powerData, eventLog, onAddData }) => {
 const StatCard = ({ icon, title, value, trend, color }) => (
   <div className="stat-card"><div className={`stat-card-icon ${color}`}>{icon}</div><div className="stat-card-info"><p className="stat-card-title">{title}</p><h4 className="stat-card-value">{value}</h4></div>{trend && <p className={`stat-card-trend ${trend.includes('+') ? 'positive' : 'negative'}`}>{trend}</p>}</div>
 );
+
+// --- MODIFIED --- Added sunlight to the form
 const DataEntryForm = ({ onAddData }) => {
   const [time, setTime] = useState('');
   const [generation, setGeneration] = useState('');
   const [consumption, setConsumption] = useState('');
   const [battery, setBattery] = useState('');
+  const [sunlight, setSunlight] = useState(''); // New state for sunlight
+  
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!time) { alert("Please enter a time."); return; }
-    onAddData({ time, generation, consumption, battery });
-    setTime(''); setGeneration(''); setConsumption(''); setBattery('');
+    onAddData({ time, generation, consumption, battery, sunlight }); // Pass sunlight data
+    setTime(''); setGeneration(''); setConsumption(''); setBattery(''); setSunlight('');
   };
   return (
-    <div className="data-entry-container"><h3 className="data-entry-title">Add New Data Point</h3><form onSubmit={handleSubmit} className="data-entry-form"><div className="form-group"><label htmlFor="time">Time (HH:MM)</label><input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} required /></div><div className="form-group"><label htmlFor="generation">Generation (W)</label><input id="generation" type="number" value={generation} onChange={(e) => setGeneration(e.target.value)} placeholder="e.g., 1500" /></div><div className="form-group"><label htmlFor="consumption">Consumption (W)</label><input id="consumption" type="number" value={consumption} onChange={(e) => setConsumption(e.target.value)} placeholder="e.g., 600" /></div><div className="form-group"><label htmlFor="battery">Battery (%)</label><input id="battery" type="number" value={battery} onChange={(e) => setBattery(e.target.value)} placeholder="e.g., 90" /></div><button type="submit" className="submit-button">Add Data Point</button></form></div>
+    <div className="data-entry-container"><h3 className="data-entry-title">Add New Data Point</h3><form onSubmit={handleSubmit} className="data-entry-form"><div className="form-group"><label htmlFor="time">Time (HH:MM)</label><input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} required /></div><div className="form-group"><label htmlFor="generation">Generation (W)</label><input id="generation" type="number" value={generation} onChange={(e) => setGeneration(e.target.value)} placeholder="e.g., 1500" /></div><div className="form-group"><label htmlFor="consumption">Consumption (W)</label><input id="consumption" type="number" value={consumption} onChange={(e) => setConsumption(e.target.value)} placeholder="e.g., 600" /></div><div className="form-group"><label htmlFor="battery">Battery (%)</label><input id="battery" type="number" value={battery} onChange={(e) => setBattery(e.target.value)} placeholder="e.g., 90" /></div><div className="form-group"><label htmlFor="sunlight">Sunlight (%)</label><input id="sunlight" type="number" value={sunlight} onChange={(e) => setSunlight(e.target.value)} placeholder="e.g., 95" /></div><button type="submit" className="submit-button">Add Data Point</button></form></div>
   );
 };
 const AboutSection = () => (
