@@ -4,7 +4,6 @@ import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
 
 // --- Recharts & Lucide Icons ---
-// --- MODIFIED --- Added ReferenceDot for chart alerts
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceDot } from 'recharts';
 import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, BatteryCharging, ArrowLeftRight, History, PlusCircle, Menu, LogOut, Info, CalendarDays, AlertTriangle, Power, Mail, Phone } from 'lucide-react';
 
@@ -13,7 +12,6 @@ import './App.css';
 
 
 // --- Mock Data ---
-// --- MODIFIED --- Added 'sunlight' property and a malfunction data point at 14:00
 const initialPowerData = [
   { time: '00:00', generation: 0, consumption: 300, battery: 85, sunlight: 0 },
   { time: '02:00', generation: 0, consumption: 250, battery: 80, sunlight: 0 },
@@ -92,7 +90,6 @@ export default function App() {
 
 
 // --- DASHBOARD COMPONENT ---
-// --- MODIFIED --- Added malfunction detection logic
 const Dashboard = ({ setAuth, user }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [powerData, setPowerData] = useState(initialPowerData);
@@ -101,17 +98,14 @@ const Dashboard = ({ setAuth, user }) => {
   const [notifications, setNotifications] = useState(mockNotifications);
   const [isNotificationOpen, setNotificationOpen] = useState(false);
   
-  // --- NEW --- State for data with anomaly flags
   const [processedPowerData, setProcessedPowerData] = useState([]);
   const navigate = useNavigate();
 
-  // --- NEW --- useEffect for malfunction detection
   useEffect(() => {
-    const MAX_GENERATION = 2300; // Your system's approximate max output in Watts
-    const TOLERANCE = 0.6; // Flag if generation is below 60% of expected output
+    const MAX_GENERATION = 2300;
+    const TOLERANCE = 0.6;
 
     const dataWithAnomalies = powerData.map(dataPoint => {
-      // Skip check for night time
       if (!dataPoint.sunlight || dataPoint.sunlight <= 0) {
         return { ...dataPoint, isMalfunction: false };
       }
@@ -120,10 +114,8 @@ const Dashboard = ({ setAuth, user }) => {
       const isMalfunctioning = dataPoint.generation < (expectedGeneration * TOLERANCE);
 
       if (isMalfunctioning) {
-        // Use a consistent message to prevent duplicate notifications
         const malfunctionMessage = 'Possible malfunction in grid. Generation is lower than expected.';
         setNotifications(prev => {
-          // Add notification only if a similar one doesn't already exist
           if (!prev.some(n => n.message === malfunctionMessage)) {
             const newNotification = {
               id: Date.now(),
@@ -190,7 +182,6 @@ const Dashboard = ({ setAuth, user }) => {
         <main className="main-content">
           <DashboardContent
             activeView={activeView}
-            // --- MODIFIED --- Pass processedData to the content component
             processedPowerData={processedPowerData}
             eventLog={eventLog}
             onAddData={handleAddData}
@@ -256,7 +247,7 @@ const Header = ({ onMenuClick, onLogout, onNotificationClick, unreadCount, user 
   </header>
 );
 
-// --- MODIFIED --- Updated to accept processedPowerData and render the new chart
+// --- MODIFIED --- This component now renders two separate charts
 const DashboardContent = ({ activeView, processedPowerData, eventLog, onAddData }) => {
   const latestData = processedPowerData.length > 0 ? processedPowerData[processedPowerData.length - 1] : {};
   return (
@@ -270,26 +261,50 @@ const DashboardContent = ({ activeView, processedPowerData, eventLog, onAddData 
             <StatCard icon={<BatteryCharging size={24} />} title="Battery Status" value={`${latestData.battery || 0}%`} trend={`${(latestData.battery || 0) > 99 ? 'Full' : 'Charging'}`} color="green" />
             <StatCard icon={<ArrowLeftRight size={24} />} title="Grid Status" value={(latestData.generation > latestData.consumption) ? "Exporting" : "Importing"} trend="" color={(latestData.generation > latestData.consumption) ? "green" : "red"} />
           </div>
+          
+          {/* --- CHART 1: Original Power Metrics --- */}
           <div className="chart-container">
             <h3 className="chart-title">Today's Power Metrics</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={processedPowerData}><defs><linearGradient id="colorGeneration" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#F97316" stopOpacity={0.8}/><stop offset="95%" stopColor="#F97316" stopOpacity={0}/></linearGradient><linearGradient id="colorConsumption" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <AreaChart data={processedPowerData}>
+                <defs>
+                  <linearGradient id="colorGeneration" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#F97316" stopOpacity={0.8}/><stop offset="95%" stopColor="#F97316" stopOpacity={0}/></linearGradient>
+                  <linearGradient id="colorConsumption" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/><stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/></linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                 <XAxis dataKey="time" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Area type="monotone" dataKey="generation" stroke="#F97316" fillOpacity={1} fill="url(#colorGeneration)" name="Generation (W)" />
+                <Area type="monotone" dataKey="consumption" stroke="#3B82F6" fillOpacity={1} fill="url(#colorConsumption)" name="Consumption (W)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* --- CHART 2: NEW Sunlight vs. Generation Analysis --- */}
+          <div className="chart-container">
+            <h3 className="chart-title">Sunlight vs. Generation Analysis</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={processedPowerData}>
+                <defs>
+                  <linearGradient id="colorGeneration" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#F97316" stopOpacity={0.8}/><stop offset="95%" stopColor="#F97316" stopOpacity={0}/></linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+                <XAxis dataKey="time" />
+                <YAxis yAxisId="left" dataKey="generation" />
+                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" dataKey="sunlight" />
                 <Tooltip />
                 <Legend />
                 <Area yAxisId="left" type="monotone" dataKey="generation" stroke="#F97316" fillOpacity={1} fill="url(#colorGeneration)" name="Generation (W)" />
-                <Area yAxisId="left" type="monotone" dataKey="consumption" stroke="#3B82F6" fillOpacity={1} fill="url(#colorConsumption)" name="Consumption (W)" />
                 <Area yAxisId="right" type="monotone" dataKey="sunlight" stroke="#82ca9d" fill="none" name="Sunlight (%)" strokeWidth={2} />
-                
-                {/* --- NEW --- Renders a red dot on any data point flagged as a malfunction */}
                 {processedPowerData.map((entry, index) =>
                   entry.isMalfunction ? <ReferenceDot key={index} r={5} fill="red" stroke="white" yAxisId="left" x={entry.time} y={entry.generation} /> : null
                 )}
               </AreaChart>
             </ResponsiveContainer>
           </div>
+
           <div className="bottom-grid">
             <div className="event-log-container"><h3 className="event-log-title">Recent Events</h3><table className="event-log-table"><thead><tr><th>Time</th><th>Event</th><th>Status</th></tr></thead><tbody>{eventLog.map(item => (<tr key={item.id}><td>{item.time}</td><td><div className="event-cell">{item.icon} {item.event}</div></td><td><span className={`status-badge ${item.color}`}>{item.status}</span></td></tr>))}</tbody></table></div>
             <DataEntryForm onAddData={onAddData} />
@@ -306,18 +321,17 @@ const StatCard = ({ icon, title, value, trend, color }) => (
   <div className="stat-card"><div className={`stat-card-icon ${color}`}>{icon}</div><div className="stat-card-info"><p className="stat-card-title">{title}</p><h4 className="stat-card-value">{value}</h4></div>{trend && <p className={`stat-card-trend ${trend.includes('+') ? 'positive' : 'negative'}`}>{trend}</p>}</div>
 );
 
-// --- MODIFIED --- Added sunlight to the form
 const DataEntryForm = ({ onAddData }) => {
   const [time, setTime] = useState('');
   const [generation, setGeneration] = useState('');
   const [consumption, setConsumption] = useState('');
   const [battery, setBattery] = useState('');
-  const [sunlight, setSunlight] = useState(''); // New state for sunlight
+  const [sunlight, setSunlight] = useState('');
   
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!time) { alert("Please enter a time."); return; }
-    onAddData({ time, generation, consumption, battery, sunlight }); // Pass sunlight data
+    onAddData({ time, generation, consumption, battery, sunlight });
     setTime(''); setGeneration(''); setConsumption(''); setBattery(''); setSunlight('');
   };
   return (
