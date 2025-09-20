@@ -4,7 +4,6 @@ import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
 
 // --- Recharts & Lucide Icons ---
-// CHANGED: Added Mail and Phone icons
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, BatteryCharging, ArrowLeftRight, History, PlusCircle, Menu, LogOut, Info, CalendarDays, AlertTriangle, Power, Mail, Phone } from 'lucide-react';
 
@@ -157,33 +156,27 @@ const Dashboard = ({ setAuth, user }) => {
 
 // --- Smaller Reusable Components ---
 
-// CHANGED: Updated the sidebar footer
-// In App.js
-
 const Sidebar = ({ isOpen, activeView, setActiveView }) => (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header"><h1 className="sidebar-title">ECOSHAKTI</h1></div>
       <nav className="sidebar-nav">
         <button className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}><LayoutDashboard className="nav-item-icon" /><span>Dashboard</span></button>
         <button className={`nav-item ${activeView === 'history' ? 'active' : ''}`} onClick={() => setActiveView('history')}><History className="nav-item-icon" /><span>History</span></button>
-        <button className={`nav-item ${activeView === 'settings' ? 'active' : ''}`} onClick={() => setActiveView('settings')}><Settings className="nav-item-icon" /><span>Settings</span></button>
+        {/* <button className={`nav-item ${activeView === 'settings' ? 'active' : ''}`} onClick={() => setActiveView('settings')}><Settings className="nav-item-icon" /><span>Settings</span></button> */}
         <button className={`nav-item ${activeView === 'about' ? 'active' : ''}`} onClick={() => setActiveView('about')}><Info className="nav-item-icon" /><span>About</span></button>
       </nav>
       <div className="sidebar-footer">
         <div className="contact-info">
             <h4 className="contact-headline">Contact</h4>
             <div className="contact-buttons-container">
-                {/* --- THIS IS THE UPDATED LINK --- */}
                 <a 
                   href="https://mail.google.com/mail/?view=cm&fs=1&to=soumyajitb089@gmail.com" 
                   className="contact-button"
-                  target="_blank" // Opens in a new tab
-                  rel="noopener noreferrer" // Security for new tabs
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                     <Mail size={18} />
                 </a>
-                {/* --- END OF UPDATED LINK --- */}
-                
                 <a href="tel:+918100152317" className="contact-button">
                     <Phone size={18} />
                 </a>
@@ -218,19 +211,16 @@ const Header = ({ onMenuClick, onLogout, onNotificationClick, unreadCount, user 
 
 const DashboardContent = ({ activeView, powerData, eventLog, onAddData }) => {
   const latestData = powerData.length > 0 ? powerData[powerData.length - 1] : {};
-  const batteryStatus = latestData.battery || 0;
-  const gridStatus = (latestData.generation > latestData.consumption) ? "Exporting" : "Importing";
-  const gridColor = (gridStatus === "Exporting") ? "green" : "red";
   return (
     <>
       {activeView === 'dashboard' && (
         <>
           <h2 className="page-title">Dashboard</h2>
           <div className="stat-cards-grid">
-            <StatCard icon={<Zap size={24} />} title="Live Generation" value={`${latestData.generation || 0} W`} trend="+5%" color="orange" />
-            <StatCard icon={<Zap size={24} />} title="Consumption" value={`${latestData.consumption || 0} W`} trend="-2%" color="blue" />
-            <StatCard icon={<BatteryCharging size={24} />} title="Battery Status" value={`${batteryStatus}%`} trend={`${batteryStatus > 99 ? 'Full' : 'Charging'}`} color="green" />
-            <StatCard icon={<ArrowLeftRight size={24} />} title="Grid Status" value={gridStatus} trend="" color={gridColor} />
+            <StatCard icon={<Zap size={24} />} title="Generation Today" value={`1850 Wh`} trend="+5%" color="orange" />
+            <StatCard icon={<Zap size={24} />} title="Consumption Today" value={`${latestData.consumption || 0} Wh`} trend="-2%" color="blue" />
+            <StatCard icon={<BatteryCharging size={24} />} title="Battery Status" value={`${latestData.battery || 0}%`} trend={`${(latestData.battery || 0) > 99 ? 'Full' : 'Charging'}`} color="green" />
+            <StatCard icon={<ArrowLeftRight size={24} />} title="Grid Status" value={(latestData.generation > latestData.consumption) ? "Exporting" : "Importing"} trend="" color={(latestData.generation > latestData.consumption) ? "green" : "red"} />
           </div>
           <div className="chart-container">
             <h3 className="chart-title">Today's Power Metrics</h3>
