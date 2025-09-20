@@ -5,7 +5,7 @@ import RegisterPage from './RegisterPage';
 
 // --- Recharts & Lucide Icons ---
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceDot, BarChart, Bar } from 'recharts';
-import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, BatteryCharging, ArrowLeftRight, History, PlusCircle, Menu, LogOut, Info, CalendarDays, AlertTriangle, Power, Mail, Phone, BarChart as BarChartIcon } from 'lucide-react';
+import { Bell, Search, ChevronDown, LayoutDashboard, Settings, Sun, Zap, BatteryCharging, ArrowLeftRight, History, PlusCircle, Menu, LogOut, Info, CalendarDays, AlertTriangle, Power, Mail, Phone, BarChart as BarChartIcon, PlugZap, Trash2 } from 'lucide-react';
 
 // --- Styles ---
 import './App.css';
@@ -23,7 +23,8 @@ const initialPowerData = [
   // Malfunction Point: High sunlight but low generation
   { time: '14:00', generation: 800, consumption: 800, battery: 100, sunlight: 93 }, 
   { time: '16:00', generation: 1600, consumption: 900, battery: 95, sunlight: 70 },
-  { time: '18:00', generation: 500, consumption: 1200, battery: 85, sunlight: 25 },
+  // Consumption Spike: Consumption is unusually high for this time
+  { time: '18:00', generation: 500, consumption: 1800, battery: 85, sunlight: 25 }, 
   { time: '20:00', generation: 0, consumption: 1000, battery: 70, sunlight: 0 },
   { time: '22:00', generation: 0, consumption: 600, battery: 60, sunlight: 0 },
 ];
@@ -52,8 +53,7 @@ const mockNotifications = [
     { id: 3, title: 'System Nominal', message: 'All systems are running optimally.', timestamp: '8h ago', read: true, icon: <Power size={20} className="green-icon" /> },
 ];
 
-// --- MODIFIED --- Added 'totalConsumption' to monthly data
-const UTILITY_RATE_PER_KWH = 7.5; // Price in ₹ per kWh from the grid
+const UTILITY_RATE_PER_KWH = 7.5; 
 const monthlyData = [
   { month: 'April', totalGeneration: 310, totalConsumption: 400 },
   { month: 'May', totalGeneration: 380, totalConsumption: 420 },
@@ -107,10 +107,19 @@ const Dashboard = ({ setAuth, user }) => {
   const [activeView, setActiveView] = useState('dashboard');
   const [notifications, setNotifications] = useState(mockNotifications);
   const [isNotificationOpen, setNotificationOpen] = useState(false);
-  
   const [processedPowerData, setProcessedPowerData] = useState([]);
+  
+  // State for Appliances feature
+  const [appliances, setAppliances] = useState([
+    { id: 1, name: 'Refrigerator', power: 200, isOn: true },
+    { id: 2, name: 'Living Room Lights', power: 100, isOn: true },
+    { id: 3, name: 'Air Conditioner', power: 1500, isOn: false },
+  ]);
+  const [spikeLog, setSpikeLog] = useState([]);
+  
   const navigate = useNavigate();
 
+  // Effect for solar panel malfunction detection
   useEffect(() => {
     const MAX_GENERATION = 2300;
     const TOLERANCE = 0.6;
@@ -146,6 +155,54 @@ const Dashboard = ({ setAuth, user }) => {
     setProcessedPowerData(dataWithAnomalies);
   }, [powerData]);
 
+  // useEffect for consumption spike monitoring
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const latestDataPoint = powerData[powerData.length - 1];
+      if (!latestDataPoint) return;
+
+      const expectedConsumption = appliances
+        .filter(app => app.isOn)
+        .reduce((sum, app) => sum + app.power, 0);
+
+      const SPIKE_THRESHOLD = 1.25; // 25% spike
+
+      if (expectedConsumption > 0 && latestDataPoint.consumption > expectedConsumption * SPIKE_THRESHOLD) {
+        const spikeMessage = `Unexpected consumption spike detected!`;
+        
+        setSpikeLog(prevLog => {
+            const newSpike = {
+                id: Date.now(),
+                timestamp: new Date(),
+                actual: latestDataPoint.consumption,
+                expected: expectedConsumption,
+            };
+            // Prevent logging the exact same spike repeatedly
+            if (prevLog.length > 0 && prevLog[0].actual === newSpike.actual && prevLog[0].expected === newSpike.expected) {
+                return prevLog;
+            }
+            return [newSpike, ...prevLog];
+        });
+
+        setNotifications(prev => {
+          if (!prev.some(n => n.message === spikeMessage)) {
+            const newNotification = {
+              id: Date.now(),
+              title: 'Consumption Alert',
+              message: spikeMessage,
+              timestamp: 'Just now',
+              read: false,
+              icon: <AlertTriangle size={20} className="red-icon" />
+            };
+            return [newNotification, ...prev];
+          }
+          return prev;
+        });
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval); // Cleanup on component unmount
+  }, [appliances, powerData]);
 
   const handleAddData = (newDataPoint) => {
     const formattedData = { ...newDataPoint, generation: Number(newDataPoint.generation) || 0, consumption: Number(newDataPoint.consumption) || 0, battery: Number(newDataPoint.battery) || 0, sunlight: Number(newDataPoint.sunlight) || 0 };
@@ -153,6 +210,26 @@ const Dashboard = ({ setAuth, user }) => {
     setPowerData(updatedData);
     const newEvent = { id: eventLog.length + 1, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), event: 'Manual Entry', status: 'Logged', icon: <PlusCircle size={16} />, color: 'gray' };
     setEventLog([newEvent, ...eventLog]);
+  };
+  
+  const handleAddAppliance = (name, power) => {
+    const newAppliance = {
+      id: Date.now(),
+      name,
+      power: Number(power),
+      isOn: false,
+    };
+    setAppliances([...appliances, newAppliance]);
+  };
+
+  const handleToggleAppliance = (id) => {
+    setAppliances(appliances.map(app => 
+      app.id === id ? { ...app, isOn: !app.isOn } : app
+    ));
+  };
+
+  const handleRemoveAppliance = (id) => {
+    setAppliances(appliances.filter(app => app.id !== id));
   };
 
   const handleLogout = () => {
@@ -194,7 +271,12 @@ const Dashboard = ({ setAuth, user }) => {
             activeView={activeView}
             processedPowerData={processedPowerData}
             eventLog={eventLog}
+            appliances={appliances}
+            spikeLog={spikeLog}
             onAddData={handleAddData}
+            onAddAppliance={handleAddAppliance}
+            onToggleAppliance={handleToggleAppliance}
+            onRemoveAppliance={handleRemoveAppliance}
           />
         </main>
       </div>
@@ -211,6 +293,7 @@ const Sidebar = ({ isOpen, activeView, setActiveView }) => (
         <button className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveView('dashboard')}><LayoutDashboard className="nav-item-icon" /><span>Dashboard</span></button>
         <button className={`nav-item ${activeView === 'history' ? 'active' : ''}`} onClick={() => setActiveView('history')}><History className="nav-item-icon" /><span>History</span></button>
         <button className={`nav-item ${activeView === 'economy' ? 'active' : ''}`} onClick={() => setActiveView('economy')}><BarChartIcon className="nav-item-icon" /><span>Economy</span></button>
+        <button className={`nav-item ${activeView === 'appliances' ? 'active' : ''}`} onClick={() => setActiveView('appliances')}><PlugZap className="nav-item-icon" /><span>Appliances</span></button>
         <button className={`nav-item ${activeView === 'about' ? 'active' : ''}`} onClick={() => setActiveView('about')}><Info className="nav-item-icon" /><span>About</span></button>
       </nav>
       <div className="sidebar-footer">
@@ -257,7 +340,7 @@ const Header = ({ onMenuClick, onLogout, onNotificationClick, unreadCount, user 
   </header>
 );
 
-const DashboardContent = ({ activeView, processedPowerData, eventLog, onAddData }) => {
+const DashboardContent = ({ activeView, processedPowerData, eventLog, onAddData, appliances, spikeLog, onAddAppliance, onToggleAppliance, onRemoveAppliance }) => {
   const latestData = processedPowerData.length > 0 ? processedPowerData[processedPowerData.length - 1] : {};
   return (
     <>
@@ -320,6 +403,14 @@ const DashboardContent = ({ activeView, processedPowerData, eventLog, onAddData 
       )}
       {activeView === 'history' && <HistoryView />}
       {activeView === 'economy' && <EconomyView />}
+      {activeView === 'appliances' && 
+        <ApplianceView 
+            appliances={appliances}
+            spikeLog={spikeLog}
+            onAddAppliance={onAddAppliance}
+            onToggleAppliance={onToggleAppliance}
+            onRemoveAppliance={onRemoveAppliance}
+        />}
       {activeView === 'about' && <AboutSection />}
     </>
   );
@@ -357,9 +448,7 @@ const HistoryView = () => {
     return (<><h2 className="page-title">Weekly History</h2><div className="history-container"><div className="day-selector">{historyData.map(day => (<button key={day.date} className={`day-selector-item ${selectedDay.date === day.date ? 'active' : ''}`} onClick={() => setSelectedDay(day)}><span>{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}</span><strong>{new Date(day.date).toLocaleDateString('en-US', { day: '2-digit' })}</strong></button>))}</div><div className="day-details"><div className="day-details-header"><CalendarDays size={24} /><h3>{new Date(selectedDay.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h3></div><div className="day-details-body"><div className="day-stats"><div className="stat-item"><Sun size={20} className="orange-icon" /><div><span>Total Generation</span><strong>{selectedDay.totalGeneration} kWh</strong></div></div><div className="stat-item"><Zap size={20} className="blue-icon" /><div><span>Total Consumption</span><strong>{selectedDay.totalConsumption} kWh</strong></div></div><div className="stat-item"><ArrowLeftRight size={20} className={netEnergy >= 0 ? 'green-icon' : 'red-icon'} /><div><span>Net Energy</span><strong className={netEnergy >= 0 ? 'positive' : 'negative'}>{netEnergy.toFixed(1)} kWh</strong></div></div></div><div className="day-chart"><RingChart size={140} strokeWidth={12} percentage={selfSufficiency} color="var(--tangerine-primary)" /><h4>Self-Sufficiency</h4><p>You generated {Math.round(selfSufficiency)}% of the energy you consumed.</p></div></div><div className="day-details-footer"><p><strong>Notes:</strong> {selectedDay.notes}</p></div></div></div></>);
 };
 
-// --- MODIFIED --- Component now shows consumption vs savings and includes a data table
 const EconomyView = () => {
-  // Savings are calculated from generation, as this is the energy you didn't have to buy
   const dataWithSavings = monthlyData.map(item => ({
     ...item,
     savings: parseFloat((item.totalGeneration * UTILITY_RATE_PER_KWH).toFixed(2)),
@@ -403,30 +492,102 @@ const EconomyView = () => {
         </ResponsiveContainer>
       </div>
 
-      {/* --- NEW --- Data table for monthly breakdown */}
       <div className="data-table-container">
         <h3 className="table-title">Monthly Breakdown</h3>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th>Consumption (kWh)</th>
-              <th>Savings (₹)</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div className="responsive-table">
+            <div className="table-header">
+                <div className="table-cell">Month</div>
+                <div className="table-cell">Consumption (kWh)</div>
+                <div className="table-cell">Savings (₹)</div>
+            </div>
             {dataWithSavings.map(item => (
-              <tr key={item.month}>
-                <td>{item.month}</td>
-                <td>{item.totalConsumption}</td>
-                <td>₹{item.savings.toFixed(2)}</td>
-              </tr>
+              <div className="table-row" key={item.month}>
+                <div className="table-cell" data-label="Month">{item.month}</div>
+                <div className="table-cell" data-label="Consumption">{item.totalConsumption}</div>
+                <div className="table-cell" data-label="Savings">₹{item.savings.toFixed(2)}</div>
+              </div>
             ))}
-          </tbody>
-        </table>
+        </div>
       </div>
     </>
   );
+};
+
+const ApplianceView = ({ appliances, spikeLog, onAddAppliance, onToggleAppliance, onRemoveAppliance }) => {
+    const [name, setName] = useState('');
+    const [power, setPower] = useState('');
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!name || !power) {
+            alert('Please enter both name and power.');
+            return;
+        }
+        onAddAppliance(name, power);
+        setName('');
+        setPower('');
+    };
+    
+    return (
+        <>
+            <h2 className="page-title">Appliance Management</h2>
+            <div className="appliance-grid">
+                <div className="appliance-form-container">
+                    <h3 className="form-title">Add New Appliance</h3>
+                    <form onSubmit={handleSubmit} className="appliance-form">
+                        <div className="form-group">
+                            <label htmlFor="appliance-name">Appliance Name</label>
+                            <input id="appliance-name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Television"/>
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="appliance-power">Power (W)</label>
+                            <input id="appliance-power" type="number" value={power} onChange={e => setPower(e.target.value)} placeholder="e.g., 150"/>
+                        </div>
+                        <button type="submit" className="submit-button">Add Appliance</button>
+                    </form>
+                </div>
+                
+                <div className="appliance-list-container">
+                    <h3 className="list-title">Your Appliances</h3>
+                    <div className="appliance-list">
+                        {appliances.map(app => (
+                            <div key={app.id} className="appliance-item">
+                                <div className="appliance-info">
+                                    <span className="appliance-name">{app.name}</span>
+                                    <span className="appliance-power">{app.power} W</span>
+                                </div>
+                                <div className="appliance-controls">
+                                    <label className="switch">
+                                        <input type="checkbox" checked={app.isOn} onChange={() => onToggleAppliance(app.id)} />
+                                        <span className="slider round"></span>
+                                    </label>
+                                    <button onClick={() => onRemoveAppliance(app.id)} className="delete-button"><Trash2 size={18} /></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className="data-table-container">
+                <h3 className="table-title">Consumption Spike Log</h3>
+                <div className="responsive-table">
+                    <div className="table-header">
+                        <div className="table-cell">Date & Time</div>
+                        <div className="table-cell">Expected Consumption</div>
+                        <div className="table-cell">Actual Consumption</div>
+                    </div>
+                    {spikeLog.length > 0 ? spikeLog.map(log => (
+                        <div className="table-row" key={log.id}>
+                            <div className="table-cell">{log.timestamp.toLocaleString()}</div>
+                            <div className="table-cell">{log.expected} W</div>
+                            <div className="table-cell">{log.actual} W</div>
+                        </div>
+                    )) : <div className="table-row"><div className="table-cell" style={{ textAlign: 'center', width: '100%' }}>No spikes detected yet.</div></div>}
+                </div>
+            </div>
+        </>
+    );
 };
 
 const NotificationPanel = ({ notifications, onMarkAllRead, onClose }) => {
