@@ -50,7 +50,7 @@ const mockNotifications = [
     { id: 3, title: 'System Nominal', message: 'All systems are running optimally.', timestamp: '8h ago', read: true, icon: <Power size={20} className="green-icon" /> },
 ];
 
-const UTILITY_RATE_PER_KWH = 7.5; 
+const UTILITY_RATE_PER_KWH = 5; 
 // Revised monthly data based on daily average of ~18.7kWh gen / ~20.1kWh consumption
 const monthlyData = [
   { month: 'April', totalGeneration: 561, totalConsumption: 603 },
