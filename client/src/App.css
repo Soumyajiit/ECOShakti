@@ -385,7 +385,142 @@ body {
 .submit-button:active { transform: translateY(0); }
 
 
-/* --- NEW: ECONOMY & APPLIANCE TABLE STYLES --- */
+/* --- ABOUT SECTION STYLES --- */
+.about-container {
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 8px;
+  max-width: 900px;
+  margin: 40px auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.about-title {
+  color: #ff8c00;
+  font-size: 2.5em;
+  margin-bottom: 25px;
+  text-align: left;
+  padding-bottom: 15px;
+}
+.about-description {
+  color: #333;
+  font-size: 1.2em;
+  line-height: 1.7;
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+
+/* --- RESTORED: INTERACTIVE HISTORY VIEW STYLES --- */
+.history-container { display: grid; grid-template-columns: 1fr; gap: 1.5rem; background-color: var(--card-background); padding: 1rem; border-radius: 0.75rem; box-shadow: var(--shadow-md); }
+.day-selector { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 1rem; }
+.day-selector-item { display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: var(--background-color); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.75rem; min-width: 60px; cursor: pointer; transition: all 0.2s ease; }
+.day-selector-item:hover { border-color: var(--tangerine-secondary); color: var(--tangerine-primary); }
+.day-selector-item.active { background-color: var(--tangerine-primary); border-color: var(--tangerine-primary); color: white; }
+.day-selector-item span { font-size: 0.75rem; text-transform: uppercase; }
+.day-selector-item strong { font-size: 1.25rem; font-weight: 700; }
+.day-details { padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 0.5rem; }
+.day-details-header { display: flex; align-items: center; gap: 0.75rem; padding-bottom: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
+.day-details-header h3 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+.day-details-body { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+.day-stats { display: flex; flex-direction: column; gap: 1.5rem; }
+.stat-item { display: flex; align-items: center; gap: 1rem; }
+.stat-item div { display: flex; flex-direction: column; }
+.stat-item span { color: var(--text-secondary); font-size: 0.875rem; }
+.stat-item strong { color: var(--text-primary); font-size: 1.5rem; font-weight: 600; }
+.stat-item .orange-icon { color: var(--tangerine-primary); }
+.stat-item .blue-icon { color: #3B82F6; }
+.stat-item .green-icon { color: #16A34A; }
+.stat-item .red-icon { color: #DC2626; }
+.day-chart { display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: var(--background-color); border-radius: 0.5rem; padding: 1.5rem; text-align: center; }
+.day-chart h4 { margin: 1rem 0 0.25rem; font-size: 1rem; font-weight: 600; }
+.day-chart p { margin: 0; font-size: 0.875rem; color: var(--text-secondary); max-width: 200px; }
+.day-details-footer { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); font-size: 0.875rem; color: var(--text-secondary); }
+.day-details-footer p { margin: 0; }
+.ring-chart-svg { transform: rotate(-90deg); }
+.ring-chart-background { fill: none; stroke: var(--border-color); }
+.ring-chart-progress { fill: none; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease-out; }
+.ring-chart-text { font-size: 24px; font-weight: 700; fill: var(--text-primary); transform: rotate(90deg) translate(0, -5px); }
+
+
+/* --- NOTIFICATION PANEL STYLES --- */
+.notification-panel {
+    position: absolute;
+    top: 4.5rem;
+    right: 1.5rem;
+    width: 380px;
+    max-height: 400px;
+    background-color: var(--card-background);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.notification-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+}
+.notification-header button {
+    background: none;
+    border: none;
+    color: var(--tangerine-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.notification-list {
+    overflow-y: auto;
+    flex: 1;
+}
+.notification-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.notification-item:last-child {
+    border-bottom: none;
+}
+.notification-item.unread {
+    background-color: var(--tangerine-light);
+    border-left: 4px solid var(--tangerine-primary);
+    padding-left: calc(1.5rem - 4px);
+}
+.notification-icon {
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+.notification-content h4 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+.notification-content p {
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+.notification-content span {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+
+/* --- ECONOMY & APPLIANCE TABLE STYLES --- */
 .data-table-container {
     background-color: var(--card-background);
     border-radius: 0.75rem;
@@ -399,7 +534,7 @@ body {
     margin: 0 0 1rem 0;
 }
 .responsive-table .table-header {
-    display: none; /* Hide header on mobile, use data-labels */
+    display: none;
 }
 .responsive-table .table-row {
     display: block;
@@ -422,7 +557,7 @@ body {
 }
 
 
-/* --- NEW: APPLIANCE VIEW STYLES --- */
+/* --- APPLIANCE VIEW STYLES --- */
 .appliance-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -462,10 +597,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 .slider.round:before { border-radius: 50%; }
 
 
-/* --- OTHER COMPONENTS (ABOUT, HISTORY, NOTIFICATIONS) --- */
-/* (Styles for these components are unchanged from your original file) */
-
-
 /* --- RESPONSIVE DESIGN --- */
 .menu-button { background: none; border: none; cursor: pointer; color: var(--text-primary); display: block; }
 .sidebar.open { transform: translateX(0); }
@@ -475,11 +606,13 @@ input:checked + .slider:before { transform: translateX(20px); }
     .main-content { padding: 1.5rem; } 
     .user-name { display: block; } 
     .search-bar-container { display: block; }
-    /* Responsive table for larger screens */
     .responsive-table .table-header { display: flex; }
     .responsive-table .table-row { display: flex; padding: 1rem; }
     .responsive-table .table-cell { display: block; flex: 1; padding: 0; }
-    .responsive-table .table-cell::before { display: none; } /* Hide data-labels */
+    .responsive-table .table-cell::before { display: none; }
+    .history-container { grid-template-columns: 120px 1fr; padding: 1.5rem; } 
+    .day-selector { flex-direction: column; overflow-x: initial; padding-bottom: 0; } 
+    .day-details-body { grid-template-columns: 1fr 1fr; align-items: center; }
 }
 @media (min-width: 1024px) {
     .app-container { padding-left: 16rem; } 
